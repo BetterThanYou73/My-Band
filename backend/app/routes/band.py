@@ -29,9 +29,11 @@ async def generate_band(file_id: str):
         analysis = analyze_audio_file(str(file_path))
         beat_timestamps = analysis["beat_timestamps"]
 
+        detected_key = analysis["detected_key"]
+
         drums = generate_basic_rock_drums(beat_timestamps)
-        bass = generate_basic_bassline(beat_timestamps)
-        rhythm_guitar = generate_basic_rhythm_guitar(beat_timestamps)
+        bass = generate_basic_bassline(beat_timestamps, key=detected_key)
+        rhythm_guitar = generate_basic_rhythm_guitar(beat_timestamps, key=detected_key)
 
     except Exception as exc:
         raise HTTPException(
