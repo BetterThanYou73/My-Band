@@ -64,7 +64,10 @@ async def render_band_audio(
         bass_stem = render_bass_stem(bass, duration_seconds)
         rhythm_stem = render_rhythm_stem(rhythm, duration_seconds)
 
-        final_mix = mix_stems([source_audio, drum_stem, bass_stem, rhythm_stem])
+        final_mix = mix_stems(
+                    [source_audio, drum_stem, bass_stem, rhythm_stem],
+                    gains=[1.0, 0.45, 0.7, 0.55],
+                )
 
         output_filename = f"{Path(file_id).stem}_myband_v1.wav"
         output_path = OUTPUT_DIR / output_filename

@@ -10,6 +10,24 @@ DEFAULT_SAMPLE_RATE = 44100
 def _time_to_sample(time_seconds: float, sr:int) -> int:
     return int(round(time_seconds * sr))
 
+def _add_decay_sine(buffer: np.ndarray, start_time: float, duration: float, start_freq: float, end_freq: float, amplitude: float, sr: int):
+    start = _time_to_sample(start_time, sr)
+    length = int(duration * sr)
+
+    if start >= len(buffer):
+        return
+
+    end = min(start + length, len(buffer))
+    actual_length = end - start
+
+    t = np.arange(actual_length) / sr
+    freqs = np.linspace(start_freq, end_freq, actual_length)
+    phase = 2 * np.pi * np.cumsum(freqs) / sr
+    envelope = np.exp(-8 * t)
+
+    tone = amplitude * np.sin(phase) * envelope
+    buffer[start:end] += tone
+
 def _add_sine_tone(buffer: np.ndarray, start_time: float, duration: float, freq: float, amplitude: float, sr: int) -> None:
     start = _time_to_sample(start_time, sr)
     length = int(duration * sr)
@@ -43,18 +61,35 @@ def _add_noise_hit(buffer: np.ndarray, start_time: float, duration: float, ampli
     buffer[start:end] += noise
 
 
-def render_drum_stem(drum_plan: dict, duration_seconds: float, sr: int=DEFAULT_SAMPLE_RATE) -> np.ndarray:
+def render_drum_stem(drum_plan: dict, duration_seconds: float, sr: int = DEFAULT_SAMPLE_RATE) -> np.ndarray:
     total_samples = int(duration_seconds * sr) + sr
     buffer = np.zeros(total_samples, dtype=np.float32)
 
     for t in drum_plan.get("kick_times", []):
-        _add_sine_tone(buffer, t, 0.12, 80.0, 0.8, sr)
+        _add_decay_sine(buffer, t, 0.14, 120.0, 55.0, 0.55, sr)
 
     for t in drum_plan.get("snare_times", []):
-        _add_noise_hit(buffer, t, 0.10, 0.5, sr)
+        _add_decay_sine(buffer, t, 0.10, 220.0, 180.0, 0.12, sr)
+        _add_noise_hit(buffer, t, 0.08, 0.22, sr)
 
     for t in drum_plan.get("hihat_times", []):
-        _add_noise_hit(buffer, t, 0.03, 0.2, sr)
+        start = _time_to_sample(t, sr)
+        length = int(0.02 * sr)
+
+        if start >= len(buffer):
+            continue
+
+        end = min(start + length, len(buffer))
+        actual_length = end - start
+
+        noise = np.random.randn(actual_length).astype(np.float32)
+        noise = noise - np.convolve(noise, np.ones(8) / 8, mode="same")
+        envelope = np.exp(-35 * (np.arange(actual_length) / sr))
+        buffer[start:end] += 0.05 * noise * envelope
+
+    peak = np.max(np.abs(buffer))
+    if peak > 0:
+        buffer = buffer / peak * 0.5
 
     return buffer
 
@@ -98,15 +133,18 @@ def render_rhythm_stem(rhythm_plan: dict, duration_seconds: float, sr: int=DEFAU
 
 
 
-def mix_stems(stems: list[np.ndarray]) -> np.ndarray:
+def mix_stems(stems: list[np.ndarray], gains: list[float] | None = None) -> np.ndarray:
     if not stems:
         return np.array([], dtype=np.float32)
+
+    if gains is None:
+        gains = [1.0] * len(stems)
 
     max_len = max(len(stem) for stem in stems)
     mix = np.zeros(max_len, dtype=np.float32)
 
-    for stem in stems:
-        mix[:len(stem)] += stem
+    for stem, gain in zip(stems, gains):
+        mix[:len(stem)] += stem * gain
 
     peak = np.max(np.abs(mix))
     if peak > 0:
