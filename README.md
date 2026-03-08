@@ -1,8 +1,8 @@
-# My-Band
+# MyBand
 
 Your riff. Your band. Instantly.
 
-My-Band is a web app that takes a lead guitar recording and generates supporting accompaniment such as drums, bass, and rhythm guitar to create a fuller band-style arrangement.
+MyBand is a web app that takes a lead guitar recording and generates supporting accompaniment such as drums, bass, and rhythm guitar to create a fuller band-style arrangement.
 
 ## Vision
 Upload a guitar idea, choose a style, and get a generated backing arrangement that feels like a real band supporting your performance.
