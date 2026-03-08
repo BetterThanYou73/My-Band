@@ -39,7 +39,7 @@ async def generate_drums_for_audio(file_id: str):
         "message": "Drum generation successful",
         "source_file": file_id,
         "tempo_bpm": analysis["tempo_bpm"],
-        "drum_plan": analysis["beat_count"],
+        "beat_count": analysis["beat_count"],
         "drums": drum_plan,
     }
         
