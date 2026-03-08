@@ -6,7 +6,7 @@ router = APIRouter()
 
 UPLOAD_DIR = Path("backend/uploads")
 
-@router.get("/analyze/{filename}")
+@router.get("/analyze/{file_id}")
 async def analyze_uploaded_audio(file_id: str):
 
     file_path = UPLOAD_DIR / file_id
