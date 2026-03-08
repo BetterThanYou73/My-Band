@@ -4,8 +4,42 @@ import librosa
 
 import numpy as np
 
+from scipy.io import wavfile
+import numpy as np
+
+
+def load_sample(path):
+    sr, data = wavfile.read(path)
+
+    if data.ndim > 1:
+        data = data[:, 0]
+
+    data = data.astype(np.float32)
+
+    peak = np.max(np.abs(data))
+    if peak > 0:
+        data = data / peak
+
+    return data
+
+
+KICK_SAMPLE = load_sample("backend/samples/drums/kick.wav")
+SNARE_SAMPLE = load_sample("backend/samples/drums/snare.wav")
+HIHAT_SAMPLE = load_sample("backend/samples/drums/hihat.wav")
+
+
 DEFAULT_SAMPLE_RATE = 44100
 
+def place_sample(buffer, sample, time, sr):
+    start = int(time * sr)
+
+    if start >= len(buffer):
+        return
+
+    end = min(start + len(sample), len(buffer))
+    length = end - start
+
+    buffer[start:end] += sample[:length]
 
 def _time_to_sample(time_seconds: float, sr:int) -> int:
     return int(round(time_seconds * sr))
@@ -61,35 +95,23 @@ def _add_noise_hit(buffer: np.ndarray, start_time: float, duration: float, ampli
     buffer[start:end] += noise
 
 
-def render_drum_stem(drum_plan: dict, duration_seconds: float, sr: int = DEFAULT_SAMPLE_RATE) -> np.ndarray:
+def render_drum_stem(drum_plan, duration_seconds, sr=48000):
+
     total_samples = int(duration_seconds * sr) + sr
     buffer = np.zeros(total_samples, dtype=np.float32)
 
-    for t in drum_plan.get("kick_times", []):
-        _add_decay_sine(buffer, t, 0.14, 120.0, 55.0, 0.55, sr)
+    for t in drum_plan["kick_times"]:
+        place_sample(buffer, KICK_SAMPLE * 0.9, t, sr)
 
-    for t in drum_plan.get("snare_times", []):
-        _add_decay_sine(buffer, t, 0.10, 220.0, 180.0, 0.12, sr)
-        _add_noise_hit(buffer, t, 0.08, 0.22, sr)
+    for t in drum_plan["snare_times"]:
+        place_sample(buffer, SNARE_SAMPLE * 0.8, t, sr)
 
-    for t in drum_plan.get("hihat_times", []):
-        start = _time_to_sample(t, sr)
-        length = int(0.02 * sr)
-
-        if start >= len(buffer):
-            continue
-
-        end = min(start + length, len(buffer))
-        actual_length = end - start
-
-        noise = np.random.randn(actual_length).astype(np.float32)
-        noise = noise - np.convolve(noise, np.ones(8) / 8, mode="same")
-        envelope = np.exp(-35 * (np.arange(actual_length) / sr))
-        buffer[start:end] += 0.05 * noise * envelope
+    for t in drum_plan["hihat_times"]:
+        place_sample(buffer, HIHAT_SAMPLE * 0.35, t, sr)
 
     peak = np.max(np.abs(buffer))
     if peak > 0:
-        buffer = buffer / peak * 0.5
+        buffer = buffer / peak * 0.7
 
     return buffer
 
