@@ -42,11 +42,12 @@ def analyze_audio_file(file_path: Path) -> dict:
 
     return {
         "filename": path.name,
-        "sample_rate": sr,
-        "channels": channels,
+        "sample_rate": int(sr),
+        "channels": int(channels),
         "duration_seconds": round(duration_seconds, 3),
         "total_samples": int(total_samples),
         "tempo_bpm": round(tempo_value, 2),
         "beat_count": int(len(beat_timestamps)),
+        "beat_timestamps": [round(float(t), 3) for t in beat_timestamps.tolist()],
         "beat_timestamps_preview": [round(float(t), 3) for t in beat_timestamps[:10]],
     }
