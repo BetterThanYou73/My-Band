@@ -1,11 +1,12 @@
 from pathlib import Path
 
-from fastapi import APIRouter, HTTPException, status
+from fastapi import APIRouter, HTTPException, Query, status
 
 from backend.services.audio_analysis import analyze_audio_file
 from backend.services.drum_generator import generate_basic_rock_drums
 from backend.services.bass_generator import generate_basic_bassline
 from backend.services.rhythm_generator import generate_basic_rhythm_guitar
+from backend.services.progression import parse_progression
 from backend.services.audio_renderer import (
     load_source_audio,
     render_drum_stem,
@@ -22,7 +23,11 @@ OUTPUT_DIR = Path("backend/generated")
 
 
 @router.post("/render/{file_id}")
-async def render_band_audio(file_id: str):
+async def render_band_audio(
+    file_id: str,
+    key: str | None = Query(default=None),
+    progression: str | None = Query(default=None),
+):
     file_path = UPLOAD_DIR / file_id
 
     if not file_path.exists():
@@ -39,9 +44,20 @@ async def render_band_audio(file_id: str):
         beat_timestamps = analysis["beat_timestamps"]
         duration_seconds = analysis["duration_seconds"]
 
+        selected_key = key if key else analysis["detected_key"]
+        progression_roots = parse_progression(progression) if progression else None
+
         drums = generate_basic_rock_drums(beat_timestamps)
-        bass = generate_basic_bassline(beat_timestamps)
-        rhythm = generate_basic_rhythm_guitar(beat_timestamps)
+        bass = generate_basic_bassline(
+            beat_timestamps,
+            key=selected_key,
+            progression_roots=progression_roots,
+        )
+        rhythm = generate_basic_rhythm_guitar(
+            beat_timestamps,
+            key=selected_key,
+            progression_roots=progression_roots,
+        )
 
         source_audio = load_source_audio(str(file_path))
         drum_stem = render_drum_stem(drums, duration_seconds)
@@ -68,4 +84,8 @@ async def render_band_audio(file_id: str):
         "source_file": file_id,
         "output_file": output_filename,
         "output_path": str(output_path),
+        "render_settings": {
+            "selected_key": selected_key,
+            "progression_roots": progression_roots or [],
+        },
     }
