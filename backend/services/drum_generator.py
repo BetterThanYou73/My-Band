@@ -10,7 +10,7 @@ def generate_basic_rock_drums(beat_timestamps: list[float]) -> dict:
             "pattern": "rock",
             "kick_times": kick_times,
             "snare_times": snare_times,
-            "hihat_time": hihat_times,
+            "hihat_times": hihat_times,
             "fill_sections": fill_sections,
         }
     
@@ -34,6 +34,6 @@ def generate_basic_rock_drums(beat_timestamps: list[float]) -> dict:
         "pattern": "rock",
         "kick_times": kick_times,
         "snare_times": snare_times,
-        "hihat_time": hihat_times,
+        "hihat_times": hihat_times,
         "fill_sections": fill_sections,
     }
