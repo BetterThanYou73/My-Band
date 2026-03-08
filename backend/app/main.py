@@ -5,6 +5,7 @@ from backend.app.routes.drums import router as drums_router
 from backend.app.routes.bass import router as bass_router
 from backend.app.routes.rythm import router as rhythm_router
 from backend.app.routes.band import router as band_router
+from backend.app.routes.render import router as render_router
 
 app = FastAPI(title="MyBand API", version="0.1.0")
 
@@ -19,3 +20,4 @@ app.include_router(drums_router, prefix="/api")
 app.include_router(bass_router, prefix="/api")
 app.include_router(rhythm_router, prefix="/api")
 app.include_router(band_router, prefix="/api")
+app.include_router(render_router, prefix="/api")
